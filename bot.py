@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 from logic import DatabaseManager, hide_img
 from config import TOKEN, DATABASE
 import os
+import cv2
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -80,5 +81,19 @@ async def on_ready():
     print(f'{bot.user} olarak giriş yapıldı!')
     if not send_message.is_running():
         send_message.start()
+
+@bot.command()
+async def get_my_score(ctx):
+    user_id = ctx.author.id
+    info = manager.get_winners_img(user_id)
+    prizes = [x[0] for x in info]
+    image_paths = os.listdir('img')
+    image_paths = [f'img/{x}' if x in prizes else f'hidden_img/{x}' for x in image_paths]
+    collage = manager.create_collage(image_paths)
+    collage_path = 'collage.png'
+    cv2.imwrite(collage_path, collage)
+    with open(collage_path, 'rb') as img:
+        file = discord.File(img)
+        await ctx.send(file=file)
 
 bot.run(TOKEN)
